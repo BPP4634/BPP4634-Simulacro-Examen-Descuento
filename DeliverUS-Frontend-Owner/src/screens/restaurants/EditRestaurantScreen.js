@@ -56,7 +56,13 @@ export default function EditRestaurantScreen ({ navigation, route }) {
       .number()
       .positive()
       .integer()
-      .required('Restaurant category is required')
+      .required('Restaurant category is required'),
+    discount: yup
+      .number()
+      .integer()
+      .min(0)
+      .max(100)
+      .required('Discount is required')
   })
 
   useEffect(() => {
@@ -185,6 +191,11 @@ export default function EditRestaurantScreen ({ navigation, route }) {
               <InputItem
                 name='phone'
                 label='Phone:'
+              />
+              <InputItem
+                name='discount'
+                label='Discount percentage:'
+                defaultValue = {0}
               />
 
               <DropDownPicker

@@ -4,7 +4,7 @@ import { StyleSheet, View, FlatList, ImageBackground, Image, Pressable } from 'r
 import { showMessage } from 'react-native-flash-message'
 import { MaterialCommunityIcons } from '@expo/vector-icons'
 import { getDetail } from '../../api/RestaurantEndpoints'
-import { remove } from '../../api/ProductEndpoints'
+import { remove, promote } from '../../api/ProductEndpoints'
 import ImageCard from '../../components/ImageCard'
 import TextRegular from '../../components/TextRegular'
 import TextSemiBold from '../../components/TextSemibold'
@@ -55,17 +55,41 @@ export default function RestaurantDetailScreen ({ navigation, route }) {
   }
 
   const renderProduct = ({ item }) => {
+    let figure = 'star-outline'
+    let promoted = 'Promote'
+    if (item.promoted) {
+      figure = 'star'
+      promoted = 'Demote'
+    }
     return (
       <ImageCard
         imageUri={item.image ? { uri: process.env.API_BASE_URL + '/' + item.image } : defaultProductImage}
         title={item.name}
       >
+        <TextSemiBold textStyle={{ color: GlobalStyles.brandPrimary }}>{restaurant.discount.toFixed(2)} off!</TextSemiBold>
         <TextRegular numberOfLines={2}>{item.description}</TextRegular>
         <TextSemiBold textStyle={styles.price}>{item.price.toFixed(2)}€</TextSemiBold>
         {!item.availability &&
           <TextRegular textStyle={styles.availability }>Not available</TextRegular>
         }
          <View style={styles.actionButtonsContainer}>
+         <Pressable
+            onPress={() => promoteProduct(item)}
+            style={({ pressed }) => [
+              {
+                backgroundColor: pressed
+                  ? GlobalStyles.brandSuccess
+                  : GlobalStyles.brandSuccessTap
+              },
+              styles.actionButton
+            ]}>
+          <View style={[{ flex: 1, flexDirection: 'row', justifyContent: 'center' }]}>
+            <MaterialCommunityIcons name={figure} color={'white'} size={20}/>
+            <TextRegular textStyle={styles.text}>
+              {promoted}
+            </TextRegular>
+          </View>
+        </Pressable>
           <Pressable
             onPress={() => navigation.navigate('EditProductScreen', { id: item.id })
             }
@@ -122,6 +146,27 @@ export default function RestaurantDetailScreen ({ navigation, route }) {
     } catch (error) {
       showMessage({
         message: `There was an error while retrieving restaurant details (id ${route.params.id}). ${error}`,
+        type: 'error',
+        style: GlobalStyles.flashStyle,
+        titleStyle: GlobalStyles.flashTextStyle
+      })
+    }
+  }
+
+  const promoteProduct = async (product) => {
+    try {
+      await promote(product.id)
+      await fetchRestaurantDetail()
+      showMessage({
+        message: `Product ${product.name} succesfully promoted`,
+        type: 'success',
+        style: GlobalStyles.flashStyle,
+        titleStyle: GlobalStyles.flashTextStyle
+      })
+    } catch (error) {
+      console.log(error)
+      showMessage({
+        message: `Product ${product.name} could not be promoted.`,
         type: 'error',
         style: GlobalStyles.flashStyle,
         titleStyle: GlobalStyles.flashTextStyle
@@ -237,7 +282,7 @@ const styles = StyleSheet.create({
     padding: 10,
     alignSelf: 'center',
     flexDirection: 'column',
-    width: '50%'
+    width: '33%'
   },
   actionButtonsContainer: {
     flexDirection: 'row',

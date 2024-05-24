@@ -71,6 +71,24 @@ const destroy = async function (req, res) {
   }
 }
 
+const promote = async function (req, res) {
+  try {
+    const product = await Product.findByPk(req.params.productId)
+    const restaurant = await Restaurant.findByPk(product.restaurantId)
+    let newPrice = product.price
+    if (!product.promoted) {
+      newPrice = product.price - product.price * restaurant.discount / 100
+    } else {
+      newPrice = product.price / (1 - restaurant.discount / 100)
+    }
+    await Product.update({ promoted: !product.promoted, price: newPrice }, { where: { id: req.params.productId } })
+    const updatedProduct = await Product.findByPk(req.params.productId)
+    res.json(updatedProduct)
+  } catch (err) {
+    res.status(500).send(err)
+  }
+}
+
 const popular = async function (req, res) {
   try {
     const topProducts = await Product.findAll(
@@ -113,6 +131,7 @@ const ProductController = {
   create,
   update,
   destroy,
-  popular
+  popular,
+  promote
 }
 export default ProductController
